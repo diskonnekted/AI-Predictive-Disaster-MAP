@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes" />
+  <title>🛡️ Dasbor Prediktif Cuaca - Platform Tanggap Bencana AI</title>
+  <meta property="og:image" content="/og-image.png" />
+
+
+  <!-- PWA Meta Tags -->
+  <meta name="theme-color" content="#1e40af" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Dasbor Prediktif" />
+  <link rel="apple-touch-icon" href="/icon-192x192.png" />
+  <link rel="manifest" href="/manifest.webmanifest" crossorigin="use-credentials" />
+  <meta name="description"
+    content="Platform prediksi dan tanggap bencana tercanggih berbasis AI untuk Indonesia (Banjarnegara). Peringatan real-time, prakiraan cuaca, layanan darurat, dan panduan keselamatan cerdas." />
+  <meta name="author" content="Tim Dasbor Prediktif Cuaca" />
+
+  <meta property="og:title" content="🛡️ Dasbor Prediktif Cuaca - Platform Tanggap Bencana AI" />
+  <meta property="og:description"
+    content="Pemantauan bencana generasi terbaru dengan prediksi AI, peringatan real-time, dan respons darurat cerdas untuk Indonesia." />
+
+
+  <meta name="twitter:card" content="summary_large_image" />
+
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@600;700;800&display=swap"
+    rel="stylesheet">
+  <script>
+    // Blocking script to prevent Flash of Unstyled Content (FOUC)
+    const savedTheme = localStorage.getItem('theme');
+    // Default to BRIGHT (light) mode as requested by user
+    if (savedTheme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      // If no theme is saved, we don't need to do anything as 'light' is the standard HTML default,
+      // but we explicitly remove 'dark' just in case.
+    }
+  </script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+</head>
+
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.tsx"></script>
+</body>
+
+</html>
