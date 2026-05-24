@@ -485,8 +485,65 @@ export const fetchEmergencyFacilities = async (location: Location, radius: numbe
     }
   } catch { /* ignore parse errors */ }
 
+  const { lat, lng } = location;
+  const isNearBanjarnegara = lat >= -7.6 && lat <= -7.2 && lng >= 109.4 && lng <= 110.0;
+  
+  const banjarnegaraFacilities: EmergencyFacility[] = isNearBanjarnegara ? [
+    {
+      id: 'manual-rsud',
+      name: 'RSUD Hj. Anna Lasmanah',
+      type: 'hospital',
+      location: { lat: -7.4014, lng: 109.7022 },
+      distance: haversineDist(lat, lng, -7.4014, 109.7022),
+      contact: '(0286) 591464',
+      address: 'Jl. Jend. Sudirman No. 42, Banjarnegara',
+      isOpen: true
+    },
+    {
+      id: 'manual-polres',
+      name: 'Polres Banjarnegara',
+      type: 'police',
+      location: { lat: -7.3980, lng: 109.6953 },
+      distance: haversineDist(lat, lng, -7.3980, 109.6953),
+      contact: '(0286) 591110',
+      address: 'Jl. Pemuda No. 39, Banjarnegara',
+      isOpen: true
+    },
+    {
+      id: 'manual-bpbd',
+      name: 'BPBD / Pusdalops Banjarnegara',
+      type: 'fire_station',
+      location: { lat: -7.3934, lng: 109.6825 },
+      distance: haversineDist(lat, lng, -7.3934, 109.6825),
+      contact: '0812-2648-2247',
+      address: 'Jl. Selamanik No. 29, Banjarnegara',
+      isOpen: true
+    },
+    {
+      id: 'manual-damkar',
+      name: 'Damkar Banjarnegara',
+      type: 'fire_station',
+      location: { lat: -7.3934, lng: 109.6825 }, // Often shared with BPBD
+      distance: haversineDist(lat, lng, -7.3934, 109.6825),
+      contact: '(0286) 592113',
+      address: 'Jl. Selamanik No. 29, Banjarnegara',
+      isOpen: true
+    },
+    {
+      id: 'manual-satpolpp',
+      name: 'Satpol PP Banjarnegara',
+      type: 'police',
+      location: { lat: -7.3965, lng: 109.6974 },
+      distance: haversineDist(lat, lng, -7.3965, 109.6974),
+      contact: '(0286) 591333',
+      address: 'Jl. Ahmad Yani No. 16, Banjarnegara',
+      isOpen: true
+    }
+  ] : [];
+
+  let facilities: EmergencyFacility[] = [...banjarnegaraFacilities];
+
   try {
-    const { lat, lng } = location;
     // Using nwr (node, way, relation) and out center to ensure we catch large structures (Schools, Temples) which are mapped as polygons
     const query = `
       [out:json][timeout:25];
@@ -526,109 +583,47 @@ export const fetchEmergencyFacilities = async (location: Location, radius: numbe
       }
     }
 
-    if (!data?.elements) {
-      throw new Error("All Overpass API mirrors failed or returned invalid data");
-    }
+    if (data?.elements) {
+      const apiFacilities: EmergencyFacility[] = data.elements.map((element: any) => {
+        let serviceType = 'other';
+        if (element.tags?.amenity === 'hospital') serviceType = 'hospital';
+        else if (element.tags?.amenity === 'police') serviceType = 'police';
+        else if (element.tags?.amenity === 'fire_station') serviceType = 'fire_station';
+        else if (element.tags?.amenity === 'school') serviceType = 'school';
+        else if (element.tags?.amenity === 'place_of_worship') serviceType = 'place_of_worship';
+        else if (element.tags?.amenity === 'community_centre') serviceType = 'community_centre';
 
-    const facilities: EmergencyFacility[] = data.elements.map((element: any) => {
-      let serviceType = 'other';
-      if (element.tags?.amenity === 'hospital') serviceType = 'hospital';
-      else if (element.tags?.amenity === 'police') serviceType = 'police';
-      else if (element.tags?.amenity === 'fire_station') serviceType = 'fire_station';
-      else if (element.tags?.amenity === 'school') serviceType = 'school';
-      else if (element.tags?.amenity === 'place_of_worship') serviceType = 'place_of_worship';
-      else if (element.tags?.amenity === 'community_centre') serviceType = 'community_centre';
+        // For ways/relations, coordinates are in element.center. For nodes, in element.lat/lon
+        const eLat = element.lat || element.center?.lat;
+        const eLng = element.lon || element.center?.lon;
+        
+        const distance = haversineDist(lat, lng, eLat, eLng);
 
-      // For ways/relations, coordinates are in element.center. For nodes, in element.lat/lon
-      const eLat = element.lat || element.center?.lat;
-      const eLng = element.lon || element.center?.lon;
-      
-      const distance = haversineDist(lat, lng, eLat, eLng);
+        return {
+          id: element.id?.toString(),
+          name: element.tags?.name || `${serviceType.replace('_', ' ')} facility`,
+          type: serviceType as 'hospital' | 'police' | 'fire_station' | 'shelter',
+          location: { lat: eLat, lng: eLng },
+          distance: distance,
+          contact: element.tags?.phone || element.tags?.['contact:phone'] || undefined,
+          address: element.tags?.['addr:full'] || element.tags?.['addr:street'] || undefined,
+          isOpen: true,
+        };
+      });
 
-      return {
-        id: element.id?.toString(),
-        name: element.tags?.name || `${serviceType.replace('_', ' ')} facility`,
-        type: serviceType as 'hospital' | 'police' | 'fire_station' | 'shelter',
-        location: { lat: eLat, lng: eLng },
-        distance: distance,
-        contact: element.tags?.phone || element.tags?.['contact:phone'] || undefined,
-        address: element.tags?.['addr:full'] || element.tags?.['addr:street'] || undefined,
-        isOpen: true,
-      };
-    });
-
-    // Manually inject Real Banjarnegara Data if near Banjarnegara
-    if (lat >= -7.6 && lat <= -7.2 && lng >= 109.4 && lng <= 110.0) {
-      const banjarnegaraFacilities: EmergencyFacility[] = [
-        {
-          id: 'manual-rsud',
-          name: 'RSUD Hj. Anna Lasmanah',
-          type: 'hospital',
-          location: { lat: -7.4014, lng: 109.7022 },
-          distance: haversineDist(lat, lng, -7.4014, 109.7022),
-          contact: '(0286) 591464',
-          address: 'Jl. Jend. Sudirman No. 42, Banjarnegara',
-          isOpen: true
-        },
-        {
-          id: 'manual-polres',
-          name: 'Polres Banjarnegara',
-          type: 'police',
-          location: { lat: -7.3980, lng: 109.6953 },
-          distance: haversineDist(lat, lng, -7.3980, 109.6953),
-          contact: '(0286) 591110',
-          address: 'Jl. Pemuda No. 39, Banjarnegara',
-          isOpen: true
-        },
-        {
-          id: 'manual-bpbd',
-          name: 'BPBD / Pusdalops Banjarnegara',
-          type: 'fire_station',
-          location: { lat: -7.3934, lng: 109.6825 },
-          distance: haversineDist(lat, lng, -7.3934, 109.6825),
-          contact: '0812-2648-2247',
-          address: 'Jl. Selamanik No. 29, Banjarnegara',
-          isOpen: true
-        },
-        {
-          id: 'manual-damkar',
-          name: 'Damkar Banjarnegara',
-          type: 'fire_station',
-          location: { lat: -7.3934, lng: 109.6825 }, // Often shared with BPBD
-          distance: haversineDist(lat, lng, -7.3934, 109.6825),
-          contact: '(0286) 592113',
-          address: 'Jl. Selamanik No. 29, Banjarnegara',
-          isOpen: true
-        },
-        {
-          id: 'manual-satpolpp',
-          name: 'Satpol PP Banjarnegara',
-          type: 'police',
-          location: { lat: -7.3965, lng: 109.6974 },
-          distance: haversineDist(lat, lng, -7.3965, 109.6974),
-          contact: '(0286) 591333',
-          address: 'Jl. Ahmad Yani No. 16, Banjarnegara',
-          isOpen: true
-        }
-      ];
-
-      // Add if not already present by ID check
-      banjarnegaraFacilities.forEach(f => {
+      // Add if not already present by name check
+      apiFacilities.forEach(f => {
         if (!facilities.find(existing => existing.name === f.name)) {
           facilities.push(f);
         }
       });
     }
-
-    facilities.sort((a, b) => (a.distance || 0) - (b.distance || 0));
-
-    try {
-      localStorage.setItem(cacheKey, JSON.stringify({ data: facilities, timestamp: Date.now() }));
-    } catch { /* ignore storage errors */ }
-
-    return facilities;
   } catch (error) {
     console.error('Error fetching emergency facilities deeply:', error);
+  }
+
+  // Fallback to cache if we have absolutely nothing
+  if (facilities.length === 0) {
     try {
       const cached = localStorage.getItem(cacheKey);
       if (cached) {
@@ -636,8 +631,15 @@ export const fetchEmergencyFacilities = async (location: Location, radius: numbe
         return data;
       }
     } catch { /* ignore */ }
-    return [];
+  } else {
+    // Sort and save to cache
+    facilities.sort((a, b) => (a.distance || 0) - (b.distance || 0));
+    try {
+      localStorage.setItem(cacheKey, JSON.stringify({ data: facilities, timestamp: Date.now() }));
+    } catch { /* ignore storage errors */ }
   }
+
+  return facilities;
 };
 
 // Geocoding search
