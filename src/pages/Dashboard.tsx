@@ -56,7 +56,17 @@ const Dashboard: React.FC = () => {
   const [manualLocation, setManualLocation] = useState<Location | null>(() => {
     try {
       const saved = localStorage.getItem('siagabanjar_manual_location');
-      return saved ? JSON.parse(saved) : null;
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        // Migrate old default coordinates to the new default coordinates to avoid caching issues
+        if (parsed && Math.abs(parsed.lat - (-7.345693520437486)) < 0.0001 && Math.abs(parsed.lng - 109.67038012186553) < 0.0001) {
+          const migrated = { ...parsed, lat: -7.396209024846692, lng: 109.69512107137585 };
+          localStorage.setItem('siagabanjar_manual_location', JSON.stringify(migrated));
+          return migrated;
+        }
+        return parsed;
+      }
+      return null;
     } catch (e) {
       console.error("Failed to parse manual location", e);
       return null;
