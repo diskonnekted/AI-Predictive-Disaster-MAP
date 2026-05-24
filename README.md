@@ -204,8 +204,8 @@ Data Sensor Live → Normalisasi Fitur → Eksekusi Neural (WebGL/WASM) → Depl
 
 ```bash
 # Clone repository
-git clone https://github.com/jaidevxr/TeamSyntax_AI-Based-Disaster-Early-Warning-Platform.git
-cd TeamSyntax_AI-Based-Disaster-Early-Warning-Platform
+git clone https://github.com/diskonnekted/AI-Predictive-Disaster-MAP.git
+cd AI-Predictive-Disaster-MAP
 
 # Install dependencies
 npm install
@@ -218,7 +218,7 @@ cp .env.example .env
 npm run dev
 ```
 
-Aplikasi akan tersedia di `http://localhost:5173`.
+Aplikasi akan tersedia di `http://localhost:8080`.
 
 ### Menjalankan Backend
 
@@ -231,7 +231,7 @@ npm run server
 node server.js
 ```
 
-Backend berjalan di `http://localhost:3001`.
+Backend berjalan di `http://localhost:3002`.
 
 ---
 
