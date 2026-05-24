@@ -137,15 +137,11 @@ const DisasterImageAnalyzer: React.FC<DisasterImageAnalyzerProps> = ({ language 
         ? hf.imageClassification({ model: 'google/vit-base-patch16-224', data: imageFile }).catch(() => [])
         : Promise.resolve([]);
 
-      // Primary: Llama 4 Scout Vision on Groq (can actually SEE the image)
-      const groqKey = import.meta.env.VITE_GROQ_API_KEY;
-      if (!groqKey) throw new Error('Groq API key not configured');
-
-      const visionResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      // Primary: Llama 4 Scout Vision on Groq (routed securely through backend proxy /api/chat)
+      const visionResponse = await fetch('/api/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${groqKey}`,
         },
         body: JSON.stringify({
           model: 'meta-llama/llama-4-scout-17b-16e-instruct',
@@ -189,9 +185,9 @@ Assessment rules:
       });
 
       if (!visionResponse.ok) {
-        const errBody = await visionResponse.text().catch(() => '');
-        console.error('Vision API error:', visionResponse.status, errBody);
-        throw new Error(`Vision API error: ${visionResponse.status}`);
+        const errBody = await visionResponse.json().catch(() => ({}));
+        const errMsg = errBody?.error || `Vision API error: ${visionResponse.status}`;
+        throw new Error(errMsg);
       }
 
       const visionData = await visionResponse.json();

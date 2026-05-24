@@ -512,22 +512,32 @@ Aturan:
           ]},
         ];
         try {
-          const groqKey = import.meta.env.VITE_GROQ_API_KEY;
-          if (!groqKey) throw new Error('No Groq API key');
-          const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+          const response = await fetch('/api/chat', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'Authorization': `Bearer ${groqKey}`,
             },
             body: JSON.stringify({ model: 'meta-llama/llama-4-scout-17b-16e-instruct', messages: visionMessages }),
           });
-          if (!response.ok) throw new Error('Vision API failed');
+          if (!response.ok) {
+            const errBody = await response.json().catch(() => ({}));
+            const errMsg = typeof errBody?.error === 'object'
+              ? (errBody.error.message || JSON.stringify(errBody.error))
+              : (errBody?.error || 'Vision API failed');
+            throw new Error(errMsg);
+          }
           aiText = (await response.json()).choices[0].message.content;
-        } catch {
-          aiText = language === 'en' 
-            ? 'I could not analyze the image right now. Please try again or describe the situation in text.'
-            : 'Saya tidak dapat menganalisis gambar saat ini. Silakan coba lagi atau jelaskan situasinya dalam teks.';
+        } catch (err: any) {
+          console.error(err);
+          if (err.message?.includes('missing') || err.message?.includes('Key missing')) {
+            aiText = language === 'id'
+              ? `⚙️ **Kunci API Groq belum dikonfigurasi.** Hubungi administrator untuk menambahkan \`VITE_GROQ_API_KEY\` ke environment Vercel.`
+              : `⚙️ **Groq API Key is not configured.** Please add \`VITE_GROQ_API_KEY\` to your Vercel environment variables.`;
+          } else {
+            aiText = language === 'en' 
+              ? 'I could not analyze the image right now. Please try again or describe the situation in text.'
+              : 'Saya tidak dapat menganalisis gambar saat ini. Silakan coba lagi atau jelaskan situasinya dalam teks.';
+          }
         }
       } else {
         // Standard text path — call Groq directly (no Supabase needed)
@@ -536,19 +546,11 @@ Aturan:
           ...[...messages, userMsg].slice(-10).map(m => ({ role: m.role, content: m.content })),
         ];
 
-        const groqKey = import.meta.env.VITE_GROQ_API_KEY;
-
-        if (!groqKey) {
-          // No API key configured — show a helpful setup message
-          aiText = language === 'id'
-            ? `⚙️ **AI Siaga Banjar belum dikonfigurasi.**\n\nUntuk mengaktifkan asisten AI, tambahkan kunci Groq API Anda:\n\n1. Buat file \`.env\` di folder proyek\n2. Tambahkan baris: \`VITE_GROQ_API_KEY=gsk_xxxx...\`\n3. Dapatkan kunci gratis di [console.groq.com](https://console.groq.com)\n4. Restart server pengembangan\n\nSementar itu, fitur lain seperti peta, cuaca, dan peringatan dini tetap berfungsi.`
-            : `⚙️ **AI assistant is not configured yet.**\n\nTo enable the AI copilot, add your Groq API key:\n\n1. Create a \`.env\` file in the project root\n2. Add: \`VITE_GROQ_API_KEY=gsk_xxxx...\`\n3. Get a free key at [console.groq.com](https://console.groq.com)\n4. Restart the dev server\n\nOther features like the map, weather, and early alerts still work normally.`;
-        } else {
-          const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        try {
+          const response = await fetch('/api/chat', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'Authorization': `Bearer ${groqKey}`,
             },
             body: JSON.stringify({
               model: 'llama-3.3-70b-versatile',
@@ -558,9 +560,21 @@ Aturan:
           });
           if (!response.ok) {
             const errBody = await response.json().catch(() => ({}));
-            throw new Error(errBody?.error?.message || `Groq API error ${response.status}`);
+            const errMsg = typeof errBody?.error === 'object'
+              ? (errBody.error.message || JSON.stringify(errBody.error))
+              : (errBody?.error || `Groq API error ${response.status}`);
+            throw new Error(errMsg);
           }
           aiText = (await response.json()).choices[0].message.content;
+        } catch (err: any) {
+          console.error(err);
+          if (err.message?.includes('missing') || err.message?.includes('Key missing')) {
+            aiText = language === 'id'
+              ? `⚙️ **Kunci API Groq belum dikonfigurasi.** Hubungi administrator untuk menambahkan \`VITE_GROQ_API_KEY\` ke environment Vercel.`
+              : `⚙️ **Groq API Key is not configured.** Please add \`VITE_GROQ_API_KEY\` to your Vercel environment variables.`;
+          } else {
+            throw err;
+          }
         }
       }
 
