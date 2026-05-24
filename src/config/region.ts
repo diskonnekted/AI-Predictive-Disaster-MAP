@@ -9,7 +9,7 @@ import type { Location } from '@/types';
 export const DEFAULT_REGION = {
   name: 'Banjarnegara, Central Java, Indonesia',
   // Commonly-cited town center coordinates for Banjarnegara.
-  center: { lat: -7.345693520437486, lng: 109.67038012186553 } satisfies Location,
+  center: { lat: -7.396209024846692, lng: 109.69512107137585 } satisfies Location,
   // Bounding box around Banjarnegara regency + a small buffer.
   // Used for offline tile downloads and to scope "local mode" data fetching.
   bounds: {

@@ -181,7 +181,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
       } catch (error) {
         console.error('❌ [DashboardSidebar] Geolocation failed, using fallback:', error);
         // Fallback to Banjarnegara if geolocation is blocked or fails
-        const fallback: Location = { lat: -7.345693520437486, lng: 109.67038012186553, name: 'Banjarnegara, Jawa Tengah' };
+        const fallback: Location = { lat: -7.396209024846692, lng: 109.69512107137585, name: 'Banjarnegara, Jawa Tengah' };
         setUserLocation(fallback);
         onLocationUpdate(fallback);
       }
